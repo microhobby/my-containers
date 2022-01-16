@@ -1,0 +1,24 @@
+FROM debian:sid
+
+RUN apt-get -y update && apt-get install -y \
+    openssh-server \
+    sudo \
+    wget \
+	&& apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
+
+# Set root passwd 
+RUN echo "root:demo" | chpasswd
+
+# config a default user
+RUN useradd -rm -d /home/demo -s /bin/bash -g root -G sudo -u 1000 demo 
+RUN  echo 'demo:demo' | chpasswd
+
+# update the .bashrc
+COPY .bashrc /home/demo/.bashrc
+
+# ssh service
+RUN service ssh start
+
+EXPOSE 22
+
+CMD ["/usr/sbin/sshd","-D"]
