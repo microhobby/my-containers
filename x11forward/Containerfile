@@ -1,0 +1,25 @@
+FROM debian:sid
+
+RUN apt-get -y update && apt-get install -y \
+    openssh-server \
+    sudo \
+    x11-apps \
+	&& apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
+
+# Set root passwd 
+RUN echo "root:demo" | chpasswd
+
+# config a default user
+RUN useradd -rm -d /home/demo -s /bin/bash -g root -G sudo -u 1000 demo 
+RUN  echo 'demo:demo' | chpasswd
+
+# ssh service
+# enable the forward on host*
+COPY ssh_config /etc/ssh/ssh_config
+# for containers we need to set the `X11UseLocalHost no`
+COPY sshd_config /etc/ssh/sshd_config
+RUN service ssh start
+
+EXPOSE 22
+
+CMD ["/usr/sbin/sshd","-D"]
