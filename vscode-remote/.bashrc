@@ -113,6 +113,6 @@ if ! shopt -oq posix; then
 fi
 
 # vscode remote ----------------------------------------------------------------
-export VSCODE_IPC_HOOK_CLI=$(ls -t /tmp/vscode-ipc-* | head -1)
-export PATH=$PATH:/home/demo/.vscode-server/bin/$(ls -t /home/demo/.vscode-server/bin/ | head -1)/bin
+export VSCODE_IPC_HOOK_CLI=$(ls -rt /tmp/vscode-ipc-* | head -1)
+export PATH=$PATH:/home/demo/.vscode-server/bin/$(ls -rt /home/demo/.vscode-server/bin/ | head -1)/bin
 # vscode remote ----------------------------------------------------------------
