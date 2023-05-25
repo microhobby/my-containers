@@ -1,0 +1,23 @@
+{
+    "image": "gambas3",
+    "registry": "ghcr.io/microhobby",
+    "version": "0.0.0",
+    "machines": [
+        {
+            "name": "arm-generic",
+            "IMAGE_ARCH": "arm",
+            "BASE_REGISTRY": "torizon",
+            "BASE_IMAGE": "/wayland-base",
+            "BASE_VERSION": 3,
+            "GPU": ""
+        },
+        {
+            "name": "arm64-vivante",
+            "IMAGE_ARCH": "arm",
+            "BASE_REGISTRY": "torizon",
+            "BASE_IMAGE": "/wayland-base",
+            "BASE_VERSION": 3,
+            "GPU": "-vivante"
+        }
+    ]
+}

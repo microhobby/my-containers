@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  gambas3:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_VERSION}
