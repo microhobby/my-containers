@@ -16,6 +16,13 @@ $SCRIPT_PATH = Split-Path -Parent $MyInvocation.MyCommand.Definition
 . (Join-Path $SCRIPT_PATH ./env.ps1)
 . (Join-Path $SCRIPT_PATH ./sec.ps1)
 
+# firts of all we need to run torizon/binfmt
+# to enable qemu for arm64 and arm32
+docker run --rm --privileged torizon/binfmt
+DockerRegistryLogin
+GhrcRegistryLogin
+GithubAuth
+
 if (Test-Path $ContainerFileFolder) {
     $env:CONTAINER_IMAGE_NAME = Split-Path -Parent $ContainerFileFolder
 
@@ -29,25 +36,37 @@ if (Test-Path $ContainerFileFolder) {
     $env:IMAGE_NAME = $metadata.image
 
     foreach ($args in $metadata.machines) {
+        $env:BASE_REGISTRY = $args.BASE_REGISTRY
+        $env:BASE_IMAGE = $args.BASE_IMAGE
+        $env:BASE_VERSION = $args.BASE_VERSION
+        $env:GPU = $args.GPU
+
         Write-Host -ForegroundColor Yellow `
             "Building:"
         Write-Host -ForegroundColor Yellow `
-            "`tImage: $($env:IMAGE_NAME)"
+            "`tImage: $($env:IMAGE_REGISTRY)$($env:IMAGE_NAME):$($env:IMAGE_VERSION)"
         Write-Host -ForegroundColor Yellow `
-            "`tArch: $($args.IMAGE_ARCH)"
+            "`tImage Base: $($env:BASE_REGISTRY)$($env:BASE_IMAGE)$($env:GPU):$($env:BASE_VERSION)"
         Write-Host -ForegroundColor Yellow `
             "`tGPU: $($args.GPU)"
 
-        docker compose `
+        $_archs = ""
+        foreach ($arch in $args.arch) {
+            Write-Host -ForegroundColor Yellow `
+                "`tArch: $arch"
+
+            if ($_archs -ne "") { 
+                $_archs = "$_archs,linux/$arch"
+            } else {
+                $_archs = "linux/$arch"
+            }
+        }
+
+        docker buildx bake `
             -f $ContainerFileFolder/docker-compose.yml `
-            build `
-            --pull `
-            --build-arg IMAGE_ARCH=$($args.IMAGE_ARCH) `
-            --build-arg BASE_REGISTRY=$($args.BASE_REGISTRY) `
-            --build-arg BASE_IMAGE=$($args.BASE_IMAGE) `
-            --build-arg BASE_VERSION=$($args.BASE_VERSION) `
-            --build-arg GPU=$($args.GPU) `
-            $env:IMAGE_NAME
+            --set *.platform=$_archs `
+            --push
+        
     }
 } else {
     Write-Host -ForegroundColor Red `
