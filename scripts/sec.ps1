@@ -30,3 +30,18 @@ function GhrcRegistryLogin {
     Write-Output $REGISTRY_PASSWORD | `
         docker login ghcr.io -u $REGISTRY_USERNAME --password-stdin
 }
+
+function DockerRegistryLogin {
+    $REGISTRY_USERNAME = `
+        Env -Name "REGISTRY_USERNAME" -Default "matheuscastello"
+    $REGISTRY_PASSWORD = (Get-Sec -Name "dockerhub_token")
+
+    Write-Output $REGISTRY_PASSWORD | `
+        docker login -u $REGISTRY_USERNAME --password-stdin
+}
+
+function GithubAuth {
+    $GITHUB_TOKEN = (Get-Sec -Name "github_token")
+
+    Write-Output $GITHUB_TOKEN | gh auth login --with-token
+}
