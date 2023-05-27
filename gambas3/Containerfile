@@ -24,15 +24,16 @@ ARG BASE_VERSION=
 ARG GPU=
 
 
-FROM --platform=linux/${IMAGE_ARCH} \
-    ${BASE_REGISTRY}${BASE_IMAGE}${GPU}:${BASE_VERSION} AS Build
+FROM debian:bookworm AS Build
 
-ARG IMAGE_ARCH
+ARG BASE_REGISTRY
+ARG BASE_IMAGE
 ARG GPU
 ARG BASE_VERSION
 
 RUN apt-get -q -y update  \
-        && apt-get -q -y install openssl \
+        && apt-get -q -y install --no-install-recommends \
+        openssl \
         openssh-server \
         rsync \
         file \
@@ -103,21 +104,40 @@ RUN apt-get -q -y update  \
         && apt-get autoremove  \
         && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://gitlab.com/microhobby/gambas.git  \
+RUN export GIT_SSL_NO_VERIFY=1 && \
+    git clone https://gitlab.com/microhobby/gambas.git  \
         && cd gambas  \
-        && git checkout microhobby-stable \
+        && git checkout bookworm \
         && ./reconf-all  \
         && GAMBAS_CONFIG_FAILURE=1 ./configure -C --disable-keyring --disable-sqlite2 --disable-qt4 --disable-qtwebkit  \
         && make -j$(nproc)  \
         && make DESTDIR=/install install
 
-FROM --platform=linux/${IMAGE_ARCH} \
-    ${BASE_REGISTRY}${BASE_IMAGE}${GPU}:${BASE_VERSION} AS Deploy
+FROM ${BASE_REGISTRY}${BASE_IMAGE}${GPU}:${BASE_VERSION} AS Deploy
+
+LABEL org.opencontainers.image.source=https://github.com/microhobby/my-containers/blob/main/gambas3
+LABEL org.opencontainers.image.authors="microhobby <matheus@castello.eng>"
+LABEL org.opencontainers.image.title="Gambas3"
+LABEL org.opencontainers.image.description="Gambas3 with patches for remote debugger"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# for vivante GPU we need some "special" sauce
+RUN apt-get -q -y update && \
+        if [ "${GPU}" = "-vivante" ]; then \
+            apt-get -q -y install \
+            imx-gpu-viv-wayland-dev \
+        ; else \
+            apt-get -q -y install \
+            libgl1 \
+        ; fi \
+    && \
+    apt-get clean && apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN apt-get -y update && apt-get install -y --no-install-recommends \
     libgtk-3-0 \
     librsvg2-2 \
-        && apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
 COPY --from=Build /install /install
 
